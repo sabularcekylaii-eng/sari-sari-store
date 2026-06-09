@@ -1,0 +1,85 @@
+/* ── CSS VARIABLES (Design Tokens) ── */
+:root {
+  --bg: #f5f0e8;
+  --surface: #ffffff;
+  --surface2: #faf6ef;
+  --text: #1a1208;
+  --text2: #6b5b3e;
+  --text3: #9c8a6e;
+  --border: #e8dcc8;
+  --border2: #d4c4a8;
+  --accent: #b8732a;
+  --accent2: #e8a050;
+  --accentbg: #fdf3e3;
+  --accenttext: #7a4a10;
+  --red: #c0392b;
+  --redbg: #fdf0ee;
+  --redtext: #a02020;
+  --green: #2d7a4f;
+  --greenbg: #eef7f2;
+  --greentext: #1e6040;
+  --blue: #1a5fa8;
+  --bluebg: #eef3fb;
+  --bluetext: #1040a0;
+  --r: 12px;
+  --rsm: 8px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-dark='true'] {
+  --bg: #18130e;
+  --surface: #231a10;
+  --surface2: #1e1710;
+  --text: #f5e8d0;
+  --text2: #c4a06a;
+  --text3: #7a6040;
+  --border: #3d2e18;
+  --border2: #4d3a20;
+  --accent: #e0973c;
+  --accentbg: #2a1e0c;
+  --accenttext: #f0c070;
+  --red: #e06050;
+  --redbg: #2a1008;
+  --redtext: #f08070;
+  --green: #50c080;
+  --greenbg: #0a1e10;
+  --greentext: #70e090;
+  --blue: #6aadff;
+  --bluebg: #0a1828;
+  --bluetext: #90c8ff;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  transition: background 0.25s, color 0.25s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── PRINT STYLES ── */
+@media print {
+  body > * { display: none !important; }
+  #print-area { display: block !important; }
+}
+
+#print-area {
+  display: none;
+  font-family: 'Courier New', monospace;
+  font-size: 12pt;
+  color: #000;
+  padding: 10mm;
+  max-width: 80mm;
+  margin: 0 auto;
+}
+#print-area .pb { font-size: 15pt; font-weight: 700; text-align: center; margin-bottom: 3pt; }
+#print-area .pd { font-size: 9pt; text-align: center; color: #555; margin-bottom: 7pt; }
+#print-area .pln { border-top: 1px dashed #000; margin: 7pt 0; }
+#print-area .prow { display: flex; justify-content: space-between; font-size: 10pt; margin: 2pt 0; }
+#print-area .ptot { font-weight: 700; font-size: 12pt; }
+#print-area .pft { text-align: center; font-size: 9pt; margin-top: 10pt; }

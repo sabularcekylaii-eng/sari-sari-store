@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/sari-sari-store/',
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: true,

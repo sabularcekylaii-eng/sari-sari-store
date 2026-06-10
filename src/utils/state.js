@@ -2,7 +2,7 @@
 // Central state object. In Phase 4 (React), this becomes useState/Zustand.
 // For now it's a plain module — import and mutate directly.
 
-import { storage }       from './storage.js'
+import { storage }         from './storage.js'
 import { SAMPLE_PRODUCTS } from '../data/sampleProducts.js'
 
 export const state = {
@@ -17,33 +17,29 @@ export const state = {
   cart:      [],   // [{ id, name, price, qty, size, cat }]
 
   // UI state
-  activeView: 'products',   // products | customer | receipt | sales | reports
-  activeTab:  'All',        // category filter
-  chartPeriod:'day',        // day | month | year
-  searchQuery: '',          // product search
-  receiptData: null,        // last completed transaction for print
+  activeView:  'products',   // products | customer | receipt | sales | reports
+  activeTab:   'All',        // category filter
+  chartPeriod: 'day',        // day | month | year
+  searchQuery: '',           // product search
+  receiptData: null,         // last completed transaction for print
 
-  // Load from localStorage (called once on startup)
-  load() {
+  // Load from Supabase (called once on startup)
+  async load() {
     this.storeName = storage.getStoreName()
     this.lang      = storage.getLang()
     this.dark      = storage.getDark()
-    this.salesLog  = storage.getSales()
-    const saved    = storage.getProducts()
-    this.products  = saved
-      ? JSON.parse(JSON.stringify(saved))
+    this.salesLog  = await storage.getSales()
+    const saved    = await storage.getProducts()
+    this.products  = saved.length > 0
+      ? saved
       : JSON.parse(JSON.stringify(SAMPLE_PRODUCTS))
   },
 
-  // Persist to localStorage
+  // Save settings to localStorage (products/sales saved to Supabase individually)
   save() {
-    storage.saveAll({
-      storeName: this.storeName,
-      lang:      this.lang,
-      dark:      this.dark,
-      products:  this.products,
-      sales:     this.salesLog,
-    })
+    storage.setStoreName(this.storeName)
+    storage.setLang(this.lang)
+    storage.setDark(this.dark)
   },
 
   // Helpers

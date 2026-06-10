@@ -24,7 +24,7 @@ import {
 } from './components/modal.js'
 
 // Load saved data on startup
-state.load()
+await state.load()
 setLang(state.lang)
 
 // ── RENDER ──
@@ -68,8 +68,6 @@ export function render() {
 }
 
 // ── APP ACTIONS (exposed to HTML via window.app) ──
-// All onclick handlers in components call app.xxx()
-
 window.app = {
   // ── SETUP ──
   confirmStoreName() {
@@ -111,13 +109,12 @@ window.app = {
     state.dark = !state.dark
     state.save()
     document.body.dataset.dark = state.dark
-    // Just swap the icon without full re-render
     const btn = document.querySelector('.topbar .icon-btn')
     if (btn) btn.innerHTML = state.dark ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon"></i>'
   },
 
   // ── PRODUCTS ──
-  setSearch(q) {
+  async setSearch(q) {
     state.searchQuery = q
     document.getElementById('prod-list').innerHTML =
       (await import('./components/products.js')).renderProductList()
@@ -133,7 +130,7 @@ window.app = {
     render()
   },
 
-  sellOne(id) {
+  async sellOne(id) {
     const p = state.products.find(x => x.id === id)
     if (!p || p.stock <= 0) return
     p.stock--
@@ -142,6 +139,9 @@ window.app = {
     state.salesLog[td].total  = Math.round((state.salesLog[td].total  || 0) + p.price)
     state.salesLog[td].count  = (state.salesLog[td].count  || 0) + 1
     state.salesLog[td].items.push({ name: p.name, qty: 1, price: p.price, time: new Date().toLocaleTimeString() })
+    // Save to Supabase
+    await storage.updateProduct(p.id, { stock: p.stock })
+    await storage.addSale({ total: p.price, items: state.salesLog[td].items })
     state.save()
     render()
   },
@@ -169,7 +169,7 @@ window.app = {
   clearCart() { state.cart = []; render() },
 
   // ── CHECKOUT ──
-  doCheckout() {
+  async doCheckout() {
     if (!state.cart.length) return
     const total = state.cartTotal()
     const td    = todayKey()
@@ -181,6 +181,14 @@ window.app = {
       const p = state.products.find(x => x.id === ci.id)
       if (p) p.stock = Math.max(0, p.stock - ci.qty)
     })
+    // Save to Supabase
+    await storage.addSale({ total, items: state.salesLog[td].items })
+    await Promise.all(
+      state.cart.map(ci => {
+        const p = state.products.find(x => x.id === ci.id)
+        return p ? storage.updateProduct(p.id, { stock: p.stock }) : Promise.resolve()
+      })
+    )
     state.receiptData = {
       items:     [...state.cart],
       total,
@@ -208,24 +216,25 @@ window.app = {
   fillProductForm(data, focusPrice) { fillProductForm(data, focusPrice) },
   resetProductSearch() { resetProductSearch() },
 
-  saveNewProduct() {
+  async saveNewProduct() {
     const name = (document.getElementById('m-name')?.value || '').trim()
     if (!name) return
-    state.products.push({
-      id:     nextId(state.products),
+    const newProduct = {
+      id:    nextId(state.products),
       name,
-      size:   (document.getElementById('m-size')?.value  || '').trim() || '—',
-      price:  parseFloat(document.getElementById('m-price')?.value) || 0,
-      stock:  parseInt(document.getElementById('m-stock')?.value)   || 0,
-      lowAt:  parseInt(document.getElementById('m-low')?.value)     || 5,
-      cat:    getSelectedCat('add-cg'),
-    })
-    state.save()
+      size:  (document.getElementById('m-size')?.value  || '').trim() || '—',
+      price: parseFloat(document.getElementById('m-price')?.value) || 0,
+      stock: parseInt(document.getElementById('m-stock')?.value)   || 0,
+      lowAt: parseInt(document.getElementById('m-low')?.value)     || 5,
+      cat:   getSelectedCat('add-cg'),
+    }
+    state.products.push(newProduct)
+    await storage.addProduct(newProduct)
     closeModal()
     render()
   },
 
-  saveEditProduct() {
+  async saveEditProduct() {
     const p = state.products.find(x => x.id === state._editingId)
     if (!p) return
     p.name  = document.getElementById('m-name')?.value.trim()  || p.name
@@ -234,15 +243,15 @@ window.app = {
     p.stock = parseInt(document.getElementById('m-stock')?.value)   || 0
     p.lowAt = parseInt(document.getElementById('m-low')?.value)     || 5
     p.cat   = getSelectedCat('edit-cg')
-    state.save()
+    await storage.updateProduct(p.id, p)
     closeModal()
     render()
   },
 
-  deleteProduct() {
+  async deleteProduct() {
+    await storage.deleteProduct(state._editingId)
     state.products = state.products.filter(p => p.id !== state._editingId)
     state.cart     = state.cart.filter(i => i.id !== state._editingId)
-    state.save()
     closeModal()
     render()
   },
